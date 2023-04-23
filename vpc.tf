@@ -1,6 +1,6 @@
 
 # 1. creating vpc 
-resource "aws_vpc" "customVPC" {
+resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr //  ipv4 cidr block for vpc
   enable_dns_support   = true         //  gives you an internal domain name
   enable_dns_hostnames = true         //  gives you an internal host name
@@ -18,7 +18,7 @@ resource "aws_vpc" "customVPC" {
 
 # 2. creating IGW
 resource "aws_internet_gateway" "customIGW" {
-  vpc_id = aws_vpc.customVPC.id // attaching custom IGW to custom VPC using vpc-id 
+  vpc_id = aws_vpc.this.id // attaching custom IGW to custom VPC using vpc-id 
 
   tags = {
     Name        = "${var.environment}-igw"
@@ -28,7 +28,7 @@ resource "aws_internet_gateway" "customIGW" {
 
 # 3. Creating Public Subnet (create it as per the number of Availaibilty zones) 
 resource "aws_subnet" "public_subnet" {
-  vpc_id                  = aws_vpc.customVPC.id // assign subnet to custom VPC
+  vpc_id                  = aws_vpc.this.id // assign subnet to custom VPC
   count                   = length(var.public_subnets_cidr)
   cidr_block              = element(var.public_subnets_cidr, count.index) // ipv4 cidr_block for public subnet 
   map_public_ip_on_launch = true                                          // true meanns public subnet will create
@@ -43,7 +43,7 @@ resource "aws_subnet" "public_subnet" {
 
 # 4 Create Route Table for public subnet -->> public_route_table
 resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.customVPC.id
+  vpc_id = aws_vpc.this.id
   tags = {
     Name        = "${var.environment}-public-route-table"
     Environment = "${var.environment}"
@@ -91,7 +91,7 @@ resource "aws_nat_gateway" "nat_gateway" {
 
 # Creating Private subnet and associate with vpc using vpc_id (create it as per the number of Availaibilty zones) 
 resource "aws_subnet" "private_subnet" {
-  vpc_id                  = aws_vpc.customVPC.id
+  vpc_id                  = aws_vpc.this.id
   count                   = length(var.private_subnets_cidr)
   cidr_block              = element(var.private_subnets_cidr, count.index)
   availability_zone       = element(var.availability_zones, count.index)
@@ -108,7 +108,7 @@ resource "aws_subnet" "private_subnet" {
 
 #  Creating Routing table for private subnet
 resource "aws_route_table" "private_route_table" {
-  vpc_id = aws_vpc.customVPC.id
+  vpc_id = aws_vpc.this.id
 
   tags = {
     Name        = "${var.environment}-private-route-table"
