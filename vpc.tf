@@ -7,7 +7,7 @@ resource "aws_vpc" "this" {
   instance_tenancy     = "default"
 
   tags = {
-    Name                                               = "${var.environment}-vpc"
+    Name                                               = "${var.project}-vpc"
     Environment                                        = "${var.environment}"
     "kubernetes.io/cluster/${var.environment}_ekscluster" = "shared"
   }
@@ -21,7 +21,7 @@ resource "aws_internet_gateway" "customIGW" {
   vpc_id = aws_vpc.this.id // attaching custom IGW to custom VPC using vpc-id 
 
   tags = {
-    Name        = "${var.environment}-igw"
+    Name        = "${var.project}-igw"
     Environment = "${var.environment}"
   }
 }
@@ -34,7 +34,7 @@ resource "aws_subnet" "public_subnet" {
   map_public_ip_on_launch = true                                          // true meanns public subnet will create
   availability_zone       = element(var.availability_zones, count.index)
   tags = {
-    Name                                               = "${var.environment}-${element(var.availability_zones, count.index)}-public-subnet"
+    Name                                               = "${var.project}-public-subnet-${count.index + 1}"
     Environment                                        = "${var.environment}"
     "kubernetes.io/cluster/${var.environment}-cluster" = "shared"
     "kubernetes.io/role/elb"                           = 1
@@ -45,7 +45,7 @@ resource "aws_subnet" "public_subnet" {
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.this.id
   tags = {
-    Name        = "${var.environment}-public-route-table"
+    Name        = "${var.project}-public-route-table"
     Environment = "${var.environment}"
   }
 }
@@ -73,7 +73,7 @@ resource "aws_eip" "nat_eip" {
   vpc        = true
   depends_on = [aws_internet_gateway.customIGW] // means if igw exits it will exists otherwise not 
   tags = {
-    "Name" = "${var.environment}_elastic_ip"
+    "Name" = "${var.project}_eip"
   }
 }
 
@@ -83,7 +83,7 @@ resource "aws_nat_gateway" "nat_gateway" {
   subnet_id     = element(aws_subnet.public_subnet.*.id, 0) // nat gateway will be created in public subnet (check subnet_id is of public subnet)
   depends_on    = [aws_internet_gateway.customIGW]          // exists only if igw exists
   tags = {
-    Name        = "${var.environment}_nat_gateway"
+    Name        = "$var.project}_nat_gateway"
     Environment = "${var.environment}"
   }
 }
@@ -98,7 +98,7 @@ resource "aws_subnet" "private_subnet" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name        = "${var.environment}-${element(var.availability_zones, count.index)}-private-subnet"
+    Name        = "${var.project}-private-subnet-${count.index + 1}"
     Environment = "${var.environment}"
     "kubernetes.io/cluster/${var.environment}-cluster" = "shared"
     "kubernetes.io/role/internal-elb"              = 1
@@ -111,7 +111,7 @@ resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    Name        = "${var.environment}-private-route-table"
+    Name        = "${var.project}-private-route-table"
     Environment = "${var.environment}"
   }
 }
